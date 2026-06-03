@@ -3,8 +3,9 @@
 Reusable personal skills for Claude Code and Codex.
 
 This repository is intended to be the source of truth for skills that should
-travel across local machines and servers. It also stores sanitized, portable
-global Claude Code and Codex configuration templates.
+travel across local machines and servers. It also stores one sanitized,
+portable global agent configuration file that can render either Claude Code or
+Codex config depending on the calling agent.
 
 ## Layout
 
@@ -18,16 +19,10 @@ skills/
   storage-analyzer/
 
 configs/
-  claude/
-    CLAUDE.md
-    settings.json
-  codex/
-    AGENTS.md
-    config.toml
-    rules/default.rules
+  unified-agent-config.json
 
 scripts/
-  merge_codex_config.py
+  render_agent_config.py
   sync_config.sh
 
 project-skills/
@@ -79,10 +74,15 @@ On another machine or server, clone the repo into `/tmp` and run:
 tmpdir=$(mktemp -d /tmp/skill-lighting-up.XXXXXX)
 git clone git@github.com:ZhengtongDu/skill-lighting-up.git "$tmpdir/skill-lighting-up"
 cd "$tmpdir/skill-lighting-up"
-./scripts/sync_config.sh --target both
+./scripts/sync_config.sh --agent codex
 ```
 
-This synchronizes:
+Use `--agent claude` when the request is from Claude Code, `--agent codex` when
+the request is from Codex, or `--agent both` when explicitly configuring both.
+`--agent auto` can infer from environment markers when available.
+
+The script renders target files from `configs/unified-agent-config.json` and
+synchronizes:
 
 - Claude Code `~/.claude/settings.json`
 - Claude Code `~/.claude/CLAUDE.md`
@@ -102,6 +102,7 @@ Do not commit:
 - API keys, tokens, auth files, or `.env` files
 - MCP server configuration
 - Claude Code or Codex settings
+- generated per-agent config outputs
 - chat history, cache, logs, or project state
 - plugin cache directories or vendor-imported system skills
 

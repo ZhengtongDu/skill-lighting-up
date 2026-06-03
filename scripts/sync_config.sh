@@ -1,18 +1,18 @@
 #!/bin/sh
 set -eu
 
-TARGET="both"
+AGENT="auto"
 MODE="all"
 INCLUDE_PROJECT_SKILLS=0
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --target)
-      TARGET="${2:-}"
+    --agent|--target)
+      AGENT="${2:-}"
       shift 2
       ;;
-    --target=*)
-      TARGET="${1#*=}"
+    --agent=*|--target=*)
+      AGENT="${1#*=}"
       shift
       ;;
     --skills-only)
@@ -29,15 +29,19 @@ while [ "$#" -gt 0 ]; do
       ;;
     -h|--help)
       cat <<'EOF'
-Usage: scripts/sync_config.sh [--target both|claude|codex] [--skills-only|--configs-only] [--include-project-skills]
+Usage: scripts/sync_config.sh [--agent auto|codex|claude|both] [--skills-only|--configs-only] [--include-project-skills]
 
-Synchronizes:
-  - Claude Code global config: ~/.claude/settings.json, ~/.claude/CLAUDE.md
-  - Codex global config: ~/.codex/config.toml, ~/.codex/AGENTS.md, ~/.codex/rules/default.rules
-  - skills/ into ~/.claude/skills and/or ~/.codex/skills
+Synchronizes from one source file:
+  configs/unified-agent-config.json
 
-Machine-local auth, project trust, marketplace cache paths, and MCP runtime paths
-are not stored in this repository.
+Agent behavior:
+  --agent codex   install Codex global config and Codex skills
+  --agent claude  install Claude Code global config and Claude skills
+  --agent both    install both
+  --agent auto    infer from the calling agent when possible
+
+Machine-local auth, project trust, marketplace cache paths, notifications, and
+MCP runtime paths are not stored in this repository.
 EOF
       exit 0
       ;;
@@ -48,17 +52,51 @@ EOF
   esac
 done
 
-case "$TARGET" in
-  both|claude|codex) ;;
+case "$AGENT" in
+  auto|both|claude|codex) ;;
   *)
-    printf 'Invalid --target: %s\n' "$TARGET" >&2
+    printf 'Invalid --agent: %s\n' "$AGENT" >&2
     exit 2
     ;;
 esac
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+UNIFIED_CONFIG="$ROOT/configs/unified-agent-config.json"
 TS=$(date +%Y%m%d-%H%M%S)
 BACKUP="$HOME/.config-backups/skill-lighting-up-sync-$TS"
+
+detect_agent() {
+  if [ "${SYNC_CONFIG_AGENT:-}" = "codex" ] || [ "${SYNC_CONFIG_AGENT:-}" = "claude" ] || [ "${SYNC_CONFIG_AGENT:-}" = "both" ]; then
+    printf '%s\n' "$SYNC_CONFIG_AGENT"
+    return
+  fi
+
+  if [ -n "${CODEX_HOME:-}" ] || [ -n "${CODEX_CLI_PATH:-}" ] || [ -n "${CODEX_SANDBOX:-}" ]; then
+    printf 'codex\n'
+    return
+  fi
+
+  if [ -n "${CLAUDE_CONFIG_DIR:-}" ] || [ -n "${CLAUDE_CODE_ENTRYPOINT:-}" ] || [ -n "${CLAUDECODE:-}" ]; then
+    printf 'claude\n'
+    return
+  fi
+
+  printf 'unknown\n'
+}
+
+if [ "$AGENT" = "auto" ]; then
+  AGENT=$(detect_agent)
+  if [ "$AGENT" = "unknown" ]; then
+    cat >&2 <<'EOF'
+Could not infer whether this request came from Codex or Claude Code.
+Run again with one of:
+  scripts/sync_config.sh --agent codex
+  scripts/sync_config.sh --agent claude
+  scripts/sync_config.sh --agent both
+EOF
+    exit 2
+  fi
+fi
 
 backup_file() {
   src=$1
@@ -69,28 +107,46 @@ backup_file() {
   fi
 }
 
+render_configs() {
+  out_dir=$1
+  mkdir -p "$out_dir"
+
+  if [ "$AGENT" = "codex" ] || [ "$AGENT" = "both" ]; then
+    python3 "$ROOT/scripts/render_agent_config.py" \
+      --config "$UNIFIED_CONFIG" \
+      --agent "$AGENT" \
+      --output-dir "$out_dir" \
+      --merge-codex-dest "$HOME/.codex/config.toml"
+  else
+    python3 "$ROOT/scripts/render_agent_config.py" \
+      --config "$UNIFIED_CONFIG" \
+      --agent "$AGENT" \
+      --output-dir "$out_dir"
+  fi
+}
+
 sync_claude_configs() {
+  rendered=$1
   mkdir -p "$HOME/.claude"
   backup_file "$HOME/.claude/settings.json" "claude-settings.json"
   backup_file "$HOME/.claude/CLAUDE.md" "CLAUDE.md"
-  cp "$ROOT/configs/claude/settings.json" "$HOME/.claude/settings.json"
-  cp "$ROOT/configs/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
+  cp "$rendered/claude/settings.json" "$HOME/.claude/settings.json"
+  cp "$rendered/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
 }
 
 sync_codex_configs() {
+  rendered=$1
   mkdir -p "$HOME/.codex/rules"
   backup_file "$HOME/.codex/config.toml" "codex-config.toml"
   backup_file "$HOME/.codex/AGENTS.md" "AGENTS.md"
   backup_file "$HOME/.codex/rules/default.rules" "codex-default.rules"
-  python3 "$ROOT/scripts/merge_codex_config.py" \
-    --template "$ROOT/configs/codex/config.toml" \
-    --dest "$HOME/.codex/config.toml"
-  cp "$ROOT/configs/codex/AGENTS.md" "$HOME/.codex/AGENTS.md"
-  cp "$ROOT/configs/codex/rules/default.rules" "$HOME/.codex/rules/default.rules"
+  cp "$rendered/codex/config.toml" "$HOME/.codex/config.toml"
+  cp "$rendered/codex/AGENTS.md" "$HOME/.codex/AGENTS.md"
+  cp "$rendered/codex/rules/default.rules" "$HOME/.codex/rules/default.rules"
 }
 
 sync_skills() {
-  args="--target $TARGET"
+  args="--target $AGENT"
   if [ "$INCLUDE_PROJECT_SKILLS" -eq 1 ]; then
     args="$args --include-project-skills"
   fi
@@ -99,11 +155,14 @@ sync_skills() {
 }
 
 if [ "$MODE" = "all" ] || [ "$MODE" = "configs" ]; then
-  if [ "$TARGET" = "both" ] || [ "$TARGET" = "claude" ]; then
-    sync_claude_configs
+  rendered_dir=$(mktemp -d /tmp/skill-lighting-up-rendered.XXXXXX)
+  render_configs "$rendered_dir"
+
+  if [ "$AGENT" = "both" ] || [ "$AGENT" = "claude" ]; then
+    sync_claude_configs "$rendered_dir"
   fi
-  if [ "$TARGET" = "both" ] || [ "$TARGET" = "codex" ]; then
-    sync_codex_configs
+  if [ "$AGENT" = "both" ] || [ "$AGENT" = "codex" ]; then
+    sync_codex_configs "$rendered_dir"
   fi
 fi
 
@@ -111,7 +170,7 @@ if [ "$MODE" = "all" ] || [ "$MODE" = "skills" ]; then
   sync_skills
 fi
 
-printf 'Sync complete.\n'
+printf 'Sync complete for agent: %s\n' "$AGENT"
 if [ -d "$BACKUP" ]; then
   printf 'Backup: %s\n' "$BACKUP"
 fi

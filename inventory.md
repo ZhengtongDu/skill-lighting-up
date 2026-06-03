@@ -13,15 +13,13 @@ Imported on 2026-06-03.
 | `pdf` | `~/.codex/skills/pdf` | Codex personal skill. |
 | `sync-config` | repository-local | Syncs sanitized global Claude/Codex configs and skills from this repo. |
 
-## Sanitized Global Configs
+## Unified Sanitized Global Config
 
 | Config | Source | Notes |
 | --- | --- | --- |
-| `configs/claude/settings.json` | `~/.claude/settings.json` | Removes local home-directory path-specific allow entries. |
-| `configs/claude/CLAUDE.md` | `~/.claude/CLAUDE.md` | Portable rewrite; keeps `dzt` environment name, removes machine-local paths. |
-| `configs/codex/AGENTS.md` | `~/.codex/AGENTS.md` | Portable rewrite; keeps `dzt` environment name, removes machine-local paths. |
-| `configs/codex/rules/default.rules` | `~/.codex/rules/default.rules` | Default Codex command approval rules. |
-| `configs/codex/config.toml` | `~/.codex/config.toml` | Stable template only; excludes auth, project trust, marketplace paths, notify paths, and bundled MCP paths. |
+| `configs/unified-agent-config.json` | Claude/Codex local configs | Single source of truth for Claude permissions, Codex rules, stable Codex preferences, and shared personal defaults. Keeps `dzt` environment name and removes machine-local paths. |
+| `scripts/render_agent_config.py` | repository-local | Renders Claude or Codex target files from the unified JSON. |
+| `scripts/sync_config.sh` | repository-local | Chooses `codex`, `claude`, or `both` and installs generated configs plus matching skills. |
 
 ## Project Skills
 

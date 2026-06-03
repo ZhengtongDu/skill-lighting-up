@@ -14,7 +14,11 @@ skills from the `skill-lighting-up` repository.
 
 ## Scope
 
-The repository stores only portable, sanitized configuration:
+The repository stores one portable, sanitized source of truth:
+
+- `configs/unified-agent-config.json`
+
+The sync script renders target-specific files from that unified config:
 
 - Claude Code global `settings.json`
 - Claude Code global `CLAUDE.md`
@@ -28,37 +32,57 @@ paths, chat history, project trust state, or machine-local secrets.
 
 ## Procedure
 
-Clone into `/tmp` and run the sync script:
+Clone into `/tmp` and run the sync script for the calling agent.
+
+When this skill is running inside Codex, use:
 
 ```sh
 tmpdir=$(mktemp -d /tmp/skill-lighting-up.XXXXXX)
 git clone git@github.com:ZhengtongDu/skill-lighting-up.git "$tmpdir/skill-lighting-up"
 cd "$tmpdir/skill-lighting-up"
-./scripts/sync_config.sh --target both
+./scripts/sync_config.sh --agent codex
 ```
+
+When this skill is running inside Claude Code, use:
+
+```sh
+tmpdir=$(mktemp -d /tmp/skill-lighting-up.XXXXXX)
+git clone git@github.com:ZhengtongDu/skill-lighting-up.git "$tmpdir/skill-lighting-up"
+cd "$tmpdir/skill-lighting-up"
+./scripts/sync_config.sh --agent claude
+```
+
+If the user explicitly asks to configure both tools:
+
+```sh
+./scripts/sync_config.sh --agent both
+```
+
+`--agent auto` is available, but explicit `codex` or `claude` is preferred
+because the running shell environment may not always expose a reliable marker.
 
 For Codex only:
 
 ```sh
-./scripts/sync_config.sh --target codex
+./scripts/sync_config.sh --agent codex
 ```
 
 For Claude Code only:
 
 ```sh
-./scripts/sync_config.sh --target claude
+./scripts/sync_config.sh --agent claude
 ```
 
 To update only skills:
 
 ```sh
-./scripts/sync_config.sh --skills-only --target both
+./scripts/sync_config.sh --skills-only --agent codex
 ```
 
 To update only global configs:
 
 ```sh
-./scripts/sync_config.sh --configs-only --target both
+./scripts/sync_config.sh --configs-only --agent codex
 ```
 
 Project skills are skipped by default. Include them only when the target machine
