@@ -11,6 +11,17 @@ Imported on 2026-06-03.
 | `storage-analyzer` | `~/.claude/skills/storage-analyzer` | Same content also existed under Codex; imported once. |
 | `gh-address-comments` | `~/.codex/skills/gh-address-comments` | Codex personal skill. |
 | `pdf` | `~/.codex/skills/pdf` | Codex personal skill. |
+| `sync-config` | repository-local | Syncs sanitized global Claude/Codex configs and skills from this repo. |
+
+## Sanitized Global Configs
+
+| Config | Source | Notes |
+| --- | --- | --- |
+| `configs/claude/settings.json` | `~/.claude/settings.json` | Removes local home-directory path-specific allow entries. |
+| `configs/claude/CLAUDE.md` | `~/.claude/CLAUDE.md` | Portable rewrite; keeps `dzt` environment name, removes machine-local paths. |
+| `configs/codex/AGENTS.md` | `~/.codex/AGENTS.md` | Portable rewrite; keeps `dzt` environment name, removes machine-local paths. |
+| `configs/codex/rules/default.rules` | `~/.codex/rules/default.rules` | Default Codex command approval rules. |
+| `configs/codex/config.toml` | `~/.codex/config.toml` | Stable template only; excludes auth, project trust, marketplace paths, notify paths, and bundled MCP paths. |
 
 ## Project Skills
 

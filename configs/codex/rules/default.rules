@@ -1,0 +1,34 @@
+# Common local workflow rules.
+# These rules only govern commands Codex wants to run outside the sandbox.
+
+# Read-only inspection.
+prefix_rule(pattern=["git", ["status", "diff", "log", "show", "branch", "rev-parse", "ls-files"]], decision="allow", justification="Read-only Git inspection is safe to run without a prompt.")
+prefix_rule(pattern=["conda", ["--version", "info", "list"]], decision="allow", justification="Read-only Conda inspection is safe to run without a prompt.")
+prefix_rule(pattern=["conda", "env", "list"], decision="allow", justification="Listing Conda environments is read-only.")
+prefix_rule(pattern=["claude", "mcp", "list"], decision="allow", justification="Listing Claude MCP servers is read-only.")
+prefix_rule(pattern=["codex", "mcp", "list"], decision="allow", justification="Listing Codex MCP servers is read-only.")
+
+# Reversible local repository updates.
+prefix_rule(pattern=["git", "add"], decision="allow", justification="Staging local changes is reversible.")
+prefix_rule(pattern=["git", "commit", "-m"], decision="allow", justification="Creating a local commit is recoverable and does not change a remote.")
+
+# Trusted local development commands.
+prefix_rule(pattern=["conda", "run", "-n", "dzt", ["python", "python3"], "-m", "pytest"], decision="allow", justification="Run the default Conda environment test suite without repeated prompts.")
+prefix_rule(pattern=["conda", "run", "-n", "dzt", "pytest"], decision="allow", justification="Run the default Conda environment test suite without repeated prompts.")
+prefix_rule(pattern=["conda", "run", "-n", "dzt", "tectonic"], decision="allow", justification="Compile local TeX documents with the default Conda environment.")
+prefix_rule(pattern=[["pdfinfo", "pdftotext", "pdftoppm", "tectonic", "xelatex", "pdflatex", "latexmk"]], decision="allow", justification="Local document inspection and compilation tools are part of the normal workflow.")
+prefix_rule(pattern=["swift", ["build", "test"]], decision="allow", justification="Local Swift build and test commands are part of the normal workflow.")
+prefix_rule(pattern=["lean", "--version"], decision="allow", justification="Checking the Lean version is read-only.")
+prefix_rule(pattern=["lake", "build"], decision="allow", justification="Local Lean builds are part of the normal workflow.")
+prefix_rule(pattern=["lake", "env", "lean"], decision="allow", justification="Run Lean inside the project toolchain without repeated prompts.")
+
+# Keep remote, destructive, privileged, network, and package-management actions visible.
+prefix_rule(pattern=["git", ["push", "restore", "reset", "clean", "rm"]], decision="prompt", justification="Confirm remote or destructive Git changes before running them.")
+prefix_rule(pattern=["git", "commit", "--amend"], decision="prompt", justification="Confirm history rewriting before amending a commit.")
+prefix_rule(pattern=["git", "remote", ["add", "remove", "set-url"]], decision="prompt", justification="Confirm Git remote changes before running them.")
+prefix_rule(pattern=[["rm", "sudo", "kill", "pkill"]], decision="prompt", justification="Confirm destructive, privileged, or process-control actions.")
+prefix_rule(pattern=[["curl", "wget", "ssh", "nc"]], decision="prompt", justification="Confirm network commands before running them outside the sandbox.")
+prefix_rule(pattern=["conda", ["create", "install", "remove", "rename"]], decision="prompt", justification="Confirm Conda environment mutations before running them.")
+prefix_rule(pattern=[["pip", "pip3", "brew"], "install"], decision="prompt", justification="Confirm package installation before running it.")
+prefix_rule(pattern=["codex", "mcp", ["add", "remove"]], decision="prompt", justification="Confirm Codex MCP configuration changes before running them.")
+prefix_rule(pattern=["claude", "mcp", ["add", "remove"]], decision="prompt", justification="Confirm Claude MCP configuration changes before running them.")

@@ -3,7 +3,8 @@
 Reusable personal skills for Claude Code and Codex.
 
 This repository is intended to be the source of truth for skills that should
-travel across local machines and servers.
+travel across local machines and servers. It also stores sanitized, portable
+global Claude Code and Codex configuration templates.
 
 ## Layout
 
@@ -13,7 +14,21 @@ skills/
   humanizer/
   hv-analysis/
   pdf/
+  sync-config/
   storage-analyzer/
+
+configs/
+  claude/
+    CLAUDE.md
+    settings.json
+  codex/
+    AGENTS.md
+    config.toml
+    rules/default.rules
+
+scripts/
+  merge_codex_config.py
+  sync_config.sh
 
 project-skills/
   overleaf/
@@ -55,6 +70,30 @@ Also install `project-skills/` globally:
 By default, project skills are not installed globally. Copy them into a
 project-local `.claude/skills/` directory when they are specific to one
 repository or workflow.
+
+## Sync Global Configs And Skills
+
+On another machine or server, clone the repo into `/tmp` and run:
+
+```sh
+tmpdir=$(mktemp -d /tmp/skill-lighting-up.XXXXXX)
+git clone git@github.com:ZhengtongDu/skill-lighting-up.git "$tmpdir/skill-lighting-up"
+cd "$tmpdir/skill-lighting-up"
+./scripts/sync_config.sh --target both
+```
+
+This synchronizes:
+
+- Claude Code `~/.claude/settings.json`
+- Claude Code `~/.claude/CLAUDE.md`
+- Codex `~/.codex/AGENTS.md`
+- Codex `~/.codex/rules/default.rules`
+- stable Codex `~/.codex/config.toml` preferences
+- reusable skills in `skills/`
+
+The Codex config merge preserves machine-local sections such as auth,
+project trust, marketplace cache paths, notification paths, and bundled MCP
+runtime paths.
 
 ## What Is Not Stored Here
 
