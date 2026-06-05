@@ -31,7 +31,8 @@ description: 阅读一篇学术论文（通常为 PDF），整理为结构化的
 
 ### 步骤 0：定位论文与环境检查
 
-- 默认最终输出目录：`/Users/duzhengtong/Documents/同步文档/Obsidian Vault`。
+- 默认最终输出目录：用户 Obsidian Vault 根目录下的 `ReadPaper/`，本文档用 `<Obsidian Vault>/ReadPaper` 表示。
+- 不要在 skill 源文件或提交到 GitHub 的内容中硬编码本机绝对路径（例如用户主目录、同步盘目录）。实际执行时再根据用户当前机器解析 `<Obsidian Vault>`。
 - 下载的论文 PDF、`pdftotext` 导出的文本、提取/渲染图片等处理过程文件统一放到 `/tmp/read-paper-<英文短标题>/`，不要放进工作目录或 Obsidian Vault。
 - 如果输入是链接，先把 PDF 下载到 `/tmp/read-paper-<英文短标题>/paper.pdf`；如果输入是本地 PDF，可直接读取原文件，或复制到该 `/tmp` 目录作为工作副本。
 - 在工作目录或用户给定位置中找到 PDF（`find . -name "*.pdf"` 或用搜索工具）。
@@ -77,10 +78,10 @@ python3 scripts/extract_pdf_assets.py "/tmp/read-paper-<英文短标题>/paper.p
 按下面的模板写成一个 `.md` 文件。命名建议：`论文解读_<英文短标题>.md`，保存到：
 
 ```text
-/Users/duzhengtong/Documents/同步文档/Obsidian Vault/论文解读_<英文短标题>.md
+<Obsidian Vault>/ReadPaper/论文解读_<英文短标题>.md
 ```
 
-如果最终文档需要长期引用图片，只把精选图片复制到 Obsidian Vault 内的相对附件目录，例如 `attachments/read-paper-<英文短标题>/`，并在 Markdown 中使用相对路径引用；其余临时图片继续留在 `/tmp`。
+如果最终文档需要长期引用图片，只把精选图片复制到 `<Obsidian Vault>/ReadPaper/attachments/read-paper-<英文短标题>/`，并在 Markdown 中用 `attachments/read-paper-<英文短标题>/...` 这样的相对路径引用；其余临时图片继续留在 `/tmp`。
 
 ```markdown
 # <中文标题> —— <英文原标题>
@@ -121,7 +122,7 @@ python3 scripts/extract_pdf_assets.py "/tmp/read-paper-<英文短标题>/paper.p
 
 - 文档为标准 Markdown，可直接用 ReText 打开：
   ```bash
-  retext "/Users/duzhengtong/Documents/同步文档/Obsidian Vault/论文解读_xxx.md"
+  retext "<Obsidian Vault>/ReadPaper/论文解读_xxx.md"
   ```
 - 告知用户最终文档路径、如有持久图片则说明 Vault 内附件目录；临时 PDF 与处理文件只需说明位于 `/tmp/read-paper-<英文短标题>/`。
 
