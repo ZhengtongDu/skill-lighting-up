@@ -29,6 +29,7 @@ description: 阅读一篇学术论文（通常为 PDF），提取论文中的关
 6. **系统整理论文中的例子**。论文里的 illustrative examples、running examples、case studies、toy examples、qualitative examples 往往是理解方法和概念的关键。精读时必须尽可能全量检索并整理原文提到的例子，说明例子想表达什么、对应哪个概念/方法/结论，并把这些例子放进最终文档作为讲解内容的一部分；重要例子详写，次要例子可列表概括。
 7. **论文基本信息必须齐全**。论文信息不仅包括标题、作者、单位、发表信息、链接、代码/数据，还必须包括论文自述的主要贡献（Contributions）。优先按原文贡献列表组织；如果原文没有显式 Contributions 小节，则从摘要、引言和结论中归纳，并明确说明是归纳。
 8. **图片要带语义进入文档**。不要只把 PDF 里的裸图片堆到附件。优先提取带 Figure caption、页码、裁剪置信度和 placement hint 的图片资产；写 Markdown 时把 pipeline/architecture 图放到方法部分，把 qualitative/example/failure case 图放到论文例子部分，把 result/ablation/comparison 图放到实验部分。
+9. **实验设置必须完整保留**。实验设置（experiment setting / setup / implementation details / evaluation protocol）是判断论文可信度和可复现性的关键，最终文档必须单独整理并保留。至少检查数据集与任务、数据划分、评估指标、对比方法、模型规模、训练/推理配置、超参数、计算资源、随机种子/重复次数、实现细节、prompt 或 decoding 设置；论文没写清的字段要标注"论文未说明"，不要省略。
 
 ## 工作流程
 
@@ -56,6 +57,8 @@ pdftotext "/tmp/read-paper-<英文短标题>/paper.pdf" "/tmp/read-paper-<英文
 
 同时检索论文中的例子线索，例如 `for example`、`e.g.`、`example`、`case study`、`illustration`、`toy example`、`running example`、`qualitative example`、`failure case`、`as shown in Figure/Table`，以及中文论文中的"例如"、"例子"、"案例"、"示例"、"如图"。记录例子所在章节/页码、原文例子内容、它用来说明的概念，以及最终文档中应放在哪个部分。
 
+同时检索实验设置线索，例如 `experiment setup`、`experimental setup`、`implementation details`、`evaluation protocol`、`datasets`、`metrics`、`baselines`、`hyperparameters`、`training details`、`inference`、`prompt`、`decoding`、`compute`、`GPU`、`random seed`、`split`、`ablation setup`，以及中文论文中的"实验设置"、"数据集"、"评价指标"、"基线方法"、"超参数"、"训练细节"、"实现细节"。把这些内容先做成摘录清单，后续写入"4.1 实验设置"。
+
 ### 步骤 2：视觉精读（按页看 PDF）
 
 用 Read 工具分批读取 PDF 页面（每次最多约 10 页），重点看：
@@ -66,6 +69,7 @@ pdftotext "/tmp/read-paper-<英文短标题>/paper.pdf" "/tmp/read-paper-<英文
 - **示例图 / 定性结果**：帮助理解方法的实际效果。
 - **公式**：核心损失函数、奖励函数等。
 - **论文例子**：检索并核对原文中用于解释概念/定义/方法/失败案例的例子。优先搜索 "for example", "e.g.", "example", "case study", "illustration", "toy", "qualitative", "running example" 等线索；对中文论文也搜索"例如"、"例子"、"案例"、"示例"。不要只摘录，要解释这个例子支撑了什么观点。
+- **实验设置表 / 附录设置**：许多论文把 dataset split、baseline、metric、hyperparameter、compute 或 prompt template 放在附录。视觉精读时必须扫实验设置相关表格和 appendix，不要只看主结果表。
 
 ### 步骤 3：提取图片（供文档/后续引用）
 
@@ -141,7 +145,7 @@ python3 scripts/extract_pdf_assets.py "/tmp/read-paper-<英文短标题>/paper.p
 （整理原文用于解释概念/方法/实验现象的例子。每个例子写清：原文例子是什么、它说明什么、为什么有助于理解论文。若例子很多，按"定义例子 / 方法例子 / 失败案例 / 定性结果"分类，并插入 qualitative / example / failure case 图片。）
 
 ## 4. 实验
-- 实验设置（数据集、基准、对比模型）
+- 实验设置（数据集、任务、划分、指标、对比模型、训练/推理配置、超参数、计算资源、复现细节）
 - 主要结果（关键数字做成表格）
 - 分析与发现
 
@@ -168,6 +172,7 @@ python3 scripts/extract_pdf_assets.py "/tmp/read-paper-<英文短标题>/paper.p
 - **不臆造数字**：拿不准的指标回到 PDF 原页核对，不要凭印象写。
 - **不臆造例子**：只把论文中实际出现的例子标为"论文例子"；如果为了帮助理解额外补充自己的类比，必须明确标注为"我的补充例子"，不要和原文例子混在一起。
 - **例子要讲清用途**：不要只摘录例子本身，还要说明它在论文中用于定义概念、解释方法、展示能力、支撑结论，还是暴露失败模式。
+- **实验设置不能省略**：即使用户主要关心方法，也要在最终文档保留实验设置。没找到的信息写"论文未说明"或"未在主文中找到，可能在附录/代码中"，不要留空。
 - **图片不要盲插**：`manifest.json` 是候选放置建议，不是最终判断。插入正文前至少打开关键 Figure 看一眼，确认裁剪包含完整视觉内容且与 caption 一致。
 - **中文标点**：正文用中文标点；代码、公式、特殊 token（如 `<|box|>`）保持原样。
 - **避免 Python 字符串里嵌套引号的坑**：若后续写脚本处理中文文本，注意中文引号 `"" `与 ASCII `"` 的冲突，正文里建议用「」避免歧义。
