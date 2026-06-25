@@ -1,0 +1,4 @@
+interface:
+  display_name: "知识结晶"
+  short_description: "把机器学习聊天沉淀成带推导和代码的中文硬核概念笔记"
+  default_prompt: "Use $knowledge-crystallizer to turn our recent ML discussion into a rigorous Chinese Obsidian concept note with derivations, Python examples, sourced references, and humanized prose."
