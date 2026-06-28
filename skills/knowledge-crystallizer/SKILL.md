@@ -9,7 +9,14 @@ description: 将最近几轮关于机器学习、深度学习、检索、优化�
 
 Turn useful ML-related chat into a reviewable Chinese concept note for the user's Obsidian `Concept Collections` directory.
 
-Resolve the output directory at runtime from the user's current request, existing project conventions, or an environment/config value such as `CONCEPT_COLLECTIONS_DIR`. If no destination can be inferred, ask the user for the target Obsidian `Concept Collections` path before writing files.
+Resolve the output directory at runtime in this order:
+
+1. An explicit path in the current user request.
+2. A local-only config file at `${CODEX_HOME:-$HOME/.codex}/knowledge-crystallizer-output-dir`.
+3. An environment/config value such as `CONCEPT_COLLECTIONS_DIR`.
+4. Existing project conventions.
+
+If no destination can be inferred, ask the user for the target Obsidian `Concept Collections` path before writing files.
 
 Default reader profile: strong in linear algebra, mathematical analysis, and algorithms; weaker in practical CS/ML engineering. Write mainly in Chinese, give first-use English terms, and keep the final result technically dense.
 
@@ -22,9 +29,9 @@ Before producing a plan or final note, read:
 
 ## Stage selection
 
-- If the user says `plan`, `第一步`, `大纲`, or asks what should be written, run the **Plan stage**.
-- If the user says `write`, `第二步`, `写文档`, `根据这个 plan 写`, or provides an accepted plan, run the **Write stage**.
-- If the stage is unclear, default to the Plan stage. Do not write the final Obsidian note until the user asks for the Write stage or clearly provides approval to write.
+- If the user explicitly says `plan`, `第一步`, `只要大纲`, `先别写文档`, or asks only what should be written, run the **Plan stage** and do not write a file.
+- Otherwise, run the **Write stage**. Direct invocations such as `知识结晶：{concept}` or `$knowledge-crystallizer {concept}` must create a Markdown file automatically.
+- If no accepted plan is available during Write stage, build a compact internal plan first, then continue writing without stopping unless the concept or output directory is genuinely unknown.
 
 ## Plan stage
 
@@ -54,7 +61,7 @@ Produce a decision-ready writing plan, not the final article.
 
 Write the final Markdown note using the accepted plan.
 
-1. Read the plan and references. If no plan is available, run a compact Plan stage first and then proceed only if the user has clearly asked for writing.
+1. Read the plan and references. If no plan is available, run a compact internal Plan stage first and continue writing.
 2. Use independent agents where practical:
    - definition and problem background;
    - mathematical derivation;
@@ -88,13 +95,19 @@ Write the final Markdown note using the accepted plan.
 {Concept Collections}/{概念中文名} ({English Name}).md
 ```
 
-Place self-made or redrawn images in:
+8. Handle images with stable relative paths:
+   - derive a filesystem-safe `{slug}` from the concept title;
+   - create `{Concept Collections}/attachments/{slug}/` before saving any image;
+   - place self-made or redrawn images in that directory;
+   - use only relative Markdown links in the note, never absolute local paths.
 
 ```text
 {Concept Collections}/attachments/{slug}/
 ```
 
 Use relative paths such as `attachments/{slug}/figure-name.png`.
+
+After writing, verify every Markdown image link points to an existing file under `{Concept Collections}`. Fix broken links before delivery.
 
 ## Output quality checklist
 

@@ -19,8 +19,18 @@ description: |
 
 ### 环境准备
 
-1. **确认PDF转换脚本可用**：本Skill自带 `scripts/md_to_pdf.py`（基于WeasyPrint），用于将最终Markdown报告转为排版精美的PDF。确保依赖已安装：`pip install weasyprint markdown --break-system-packages`。
+1. **确认PDF转换脚本可用**：本Skill自带 `scripts/md_to_pdf.py` 作为兼容入口，但实际转换委托给 BetterMarkdownHelper 的 `markdown-publisher`（Pandoc + XeLaTeX，中文长文更稳）。默认会查找 `<HOME>/work/BetterMarkdownHelper/markdown-publisher`；如果目录不同，设置 `MARKDOWN_PUBLISHER_ROOT=<markdown-publisher目录>`。依赖检查优先运行 `node <markdown-publisher>/packages/cli/dist/index.js doctor`。
 2. **写作风格**：本Skill已内置完整的写作风格指南（见下文"写作风格"部分），无需额外加载其他skill。
+
+### 近期Claude Code复盘后的统一修复
+
+最近几次使用本Skill时，Claude Code 反复遇到几类问题，之后执行时要统一规避：
+
+1. **PDF渲染统一走 BetterMarkdownHelper。** 之前 WeasyPrint 反复遇到 `libpango`、`DYLD_FALLBACK_LIBRARY_PATH`、中文多页 exit 139、字体子集化崩溃等问题；不要继续维护或优先使用这条路线。默认用 `markdown-publisher` 的 Pandoc + XeLaTeX 实现。若 Pandoc/XeLaTeX 缺失，先运行 `mdpub doctor` 定位；如果需要安装新包或切换环境，必须先问用户。
+2. **必须使用Workflow作为主执行框架。** 执行 hv-analysis 时，不要询问用户是否授权 Workflow，也不要退回单Agent手写整篇报告。必须用 Workflow 编排信息收集、分工写作、事实核查、humanizer 后复核和最终整合；资料收齐后，Workflow 的后续阶段要继续推进到写作、核查和交付，而不是停留在工具讨论上。
+3. **最终报告不要暴露内部生成过程。** 报告正文只写研究对象本身，不写“我用了哪些Agent/Workflow”“写作过程如何”“哪些中间稿怎么来的”。如果用户明确要求某些过程或敏感点不要出现在最终稿中，加入本次任务的禁写清单，并在交付前搜索确认。
+4. **事实核查要在交付前完成。** humanizer 之后、PDF 之前，对关键事实做一次对抗式核查：论文标题、arXiv编号、日期、机构/人名、榜单数字、产品定价、引用原文含义。发现“简化表述导致误读”或标题/结论定性不准时，先修Markdown，再生成PDF。
+5. **缺口要写成缺口，不要写成结论。** Reddit/知乎原帖、实测延迟、商业价格、内部数据等查不到时，标注“暂缺/未找到可靠来源”，不要用二手转述或猜测补齐。
 
 ### 明确研究对象
 
@@ -39,7 +49,7 @@ description: |
 
 ### 并行搜索策略
 
-使用子Agent并行搜索来提高效率。建议的分工：
+必须使用 Workflow 组织子Agent并行搜索和后续写作核查。建议的分工：
 
 - **子Agent 1 — 纵向信息**：研究对象的起源、创始人背景、发展历程、关键事件、版本迭代、融资、战略转向、危机
 - **子Agent 2 — 横向信息**：竞品识别、各竞品的特点和用户口碑、行业对比评测、市场份额
@@ -204,32 +214,45 @@ prompt要描述目标（"获取""调研""了解"），不要用暗示具体手�
 
 ## 第五步：生成PDF报告
 
-报告写完后，使用本Skill自带的 `scripts/md_to_pdf.py` 脚本将Markdown转为排版精美的PDF。
+报告写完后，先对最终Markdown稿件做一次去AI味处理，再使用本Skill自带的 `scripts/md_to_pdf.py` 调用 BetterMarkdownHelper/markdown-publisher，将Markdown转为排版精美的PDF。
+
+### Humanizer去AI处理
+
+在最终稿产出后、生成PDF前，调用 `humanizer` skill 处理最终Markdown文件：
+
+1. 对 `[研究对象]_横纵分析报告.md` 运行 `humanizer`，生成去AI处理后的 `.humanized.md` 文件。
+2. 检查 humanizer 输出，确保事实、引用、URL、表格、标题结构和方法论说明没有被改坏。
+3. 如果处理结果可用，将 `.humanized.md` 作为后续PDF转换的最终稿；原始最终稿可保留为草稿备份。
+4. 如果 humanizer 改动影响事实准确性或引用结构，手动合并可用修改，再进入PDF转换。
 
 ### 转换流程
 
 1. **先完成Markdown稿件**：将完整报告写为标准Markdown格式，保存为 `[研究对象]_横纵分析报告.md`
-2. **安装依赖**（如未安装）：`pip install weasyprint markdown --break-system-packages`
-3. **运行转换脚本**：
+2. **调用humanizer去AI味**：按上面的流程生成并确认最终可转换的Markdown稿件
+3. **检查转换依赖**：BetterMarkdownHelper 依赖 Node.js、Pandoc、XeLaTeX。优先运行：
    ```bash
-   python [skill目录]/scripts/md_to_pdf.py input.md output.pdf --title "研究对象名称" --author "数字生命卡兹克"
+   node <markdown-publisher>/packages/cli/dist/index.js doctor
    ```
-4. 脚本会自动生成中间HTML文件（便于调试）和最终PDF
+4. **运行转换脚本**：
+   ```bash
+   python [skill目录]/scripts/md_to_pdf.py input.md output.pdf --pdf-engine xelatex
+   ```
+5. 若 BetterMarkdownHelper 不在默认位置，给命令加环境变量：
+   ```bash
+   MARKDOWN_PUBLISHER_ROOT=<WORK_DIR>/BetterMarkdownHelper/markdown-publisher python [skill目录]/scripts/md_to_pdf.py input.md output.pdf --pdf-engine xelatex
+   ```
+6. 包装器默认把 BetterMarkdownHelper 模板里的 `fontset=mac` 临时替换为 TeX Live 自带的 `fandol`，避免本机缺少 `STHeiti` 等 mac 字体时报错；如需强制使用其他字体集，可设置 `MARKDOWN_PUBLISHER_FONTSET=mac|fandol|windows`。
+7. 如果 PDF 导出失败，先导出 TeX 或运行 `mdpub doctor` 排查 Pandoc/XeLaTeX/模板/字体问题，不要回退到 WeasyPrint。
 
-### 脚本内置的排版规范
+### BetterMarkdownHelper排版规范
 
-`md_to_pdf.py` 已内置完整的CSS排版方案，无需手动调整：
+PDF 由 BetterMarkdownHelper/markdown-publisher 生成，核心路线是 Pandoc + XeLaTeX：
 
-- **页面**：A4，页边距上25mm/左右20mm/下20mm
-- **封面页**：自动生成，包含标题（28pt深蓝色）、副标题「横纵分析法深度研究报告」、作者信息、装饰分隔线
-- **配色**：H1标题=#1a5276深蓝、H2=#1e8449绿色、H3=#2e86c1浅蓝、H4=#5b2c6f紫色，正文=#2c3e50深灰
-- **字体**：CSS fallback链 `"Droid Sans Fallback", Helvetica, Arial, sans-serif`，自动处理中英文混排
-- **正文**：10.5pt，行距1.75，两端对齐，孤行/寡行控制
-- **引用块**：左侧3pt深蓝竖线 + 浅灰背景
-- **表格**：全宽、深蓝表头白字、斑马纹行
-- **页眉**：「报告标题 | 横纵分析法深度研究报告」（首页不显示）
-- **页脚**：「第 X 页」（首页不显示）
-- Markdown的第一个H1会被自动提取为封面标题，正文中不会重复出现
+- **中文**：使用 `ctex` 与 XeLaTeX；hv-analysis 包装器默认用 `fontset=fandol`，比 WeasyPrint 更适合中文长文，也更少依赖本机 mac 字体。
+- **数学公式**：由 Pandoc/LaTeX 处理，适合学术报告中的行内公式和独立公式。
+- **代码块**：使用 Pandoc 高亮与 LaTeX 模板宏处理。
+- **图片**：`--resource-path` 指向 Markdown 所在目录，优先使用相对路径资源。
+- **调试**：PDF 失败时先导出 TeX 定位 LaTeX 报错；常见原因是宏包缺失、中文字体不可用或公式语法错误。
 
 ### Markdown写作注意事项
 
@@ -274,7 +297,29 @@ prompt要描述目标（"获取""调研""了解"），不要用暗示具体手�
 
 ### 文件命名和交付
 
-PDF文件命名为 `[研究对象名称]_横纵分析报告.pdf`，保存到用户的工作目录中。
+默认把完整交付物保存到当前工作区下的本地归档目录：
+
+```text
+local-reports/hv-analysis/files/[研究对象名称]/
+```
+
+如果目录不存在，先创建目录。每个研究对象独立建一个子目录，至少保存：
+
+- `[研究对象名称]_横纵分析报告.md`
+- `[研究对象名称]_横纵分析报告.pdf`
+
+可选保存：
+
+- `[研究对象名称]_横纵分析报告.tex`（PDF排障时）
+- `[研究对象名称]_横纵分析报告.html`（需要网页/公众号预览时）
+
+同时更新本机私有清单 `local-reports/hv-analysis/inventory.private.md`，记录原始来源、归档位置、生成时间和缺失格式。这个文件只供本机使用。
+
+**GitHub 脱敏要求**：
+
+- 不要提交 `local-reports/hv-analysis/files/` 中的报告正文、PDF、HTML 或其他生成物。
+- 不要提交 `inventory.private.md`，也不要在可提交文件里写用户主目录、微信缓存路径、真实机器绝对路径或其他个人环境信息。
+- 可提交的公开说明只使用仓库相对路径，例如 `local-reports/hv-analysis/files/`，必要时用 `<WORKSPACE_ROOT>`、`<REPORT_DIR>`、`<研究对象名称>` 这类占位符。
 
 ---
 
@@ -319,5 +364,9 @@ PDF文件命名为 `[研究对象名称]_横纵分析报告.pdf`，保存到用�
 - [ ] 没有触犯绝对禁区里的任何一条？
 - [ ] 所有关键事实标注了信息来源？
 - [ ] 搜不到的信息诚实标注了「暂缺」，没有编造？
+- [ ] 最终Markdown稿件已经调用 `humanizer` 做过去AI处理，并确认没有损坏事实、引用和结构？
+- [ ] 已做交付前事实核查，修正标题、日期、编号、数字、来源含义等硬事实偏差？
+- [ ] 终稿没有暴露内部执行过程、Workflow/Agent编排细节，且满足用户本次指定的禁写清单？
 - [ ] PDF排版美观、结构清晰、可读性好？
+- [ ] PDF 已通过 BetterMarkdownHelper/markdown-publisher 生成；如失败，已用 `mdpub doctor` 或 TeX 导出定位 Pandoc/XeLaTeX 问题？
 - [ ] 总字数在 10,000-30,000 字的范围内？

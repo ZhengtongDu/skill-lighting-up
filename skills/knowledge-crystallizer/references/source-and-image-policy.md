@@ -49,11 +49,19 @@ Default strategy: **引用 + 重画**.
 图：{diagram description}。结构参考自 {source title}，已重新绘制。
 ```
 
-6. Store generated or redrawn assets under:
+6. Store generated or redrawn assets under the resolved output directory:
 
 ```text
-Concept Collections/attachments/{slug}/
+{Concept Collections}/attachments/{slug}/
 ```
+
+7. In the Markdown note, link images only with relative paths:
+
+```markdown
+![图名](attachments/{slug}/figure-name.png)
+```
+
+8. Never use absolute local paths in the Markdown image link. After writing, check that every `![](...)` target exists relative to the note file.
 
 ## Python examples from sources
 

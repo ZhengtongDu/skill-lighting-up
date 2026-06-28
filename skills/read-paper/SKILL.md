@@ -12,7 +12,7 @@ description: 阅读学术论文 PDF、arXiv 链接或本地论文文件，提取
 每篇论文只使用一个最终输出目录，固定为：
 
 ```text
-/Users/duzhengtong/Library/Mobile Documents/com~apple~CloudDocs/同步文档/Obsidian Vault/ReadPaper/read-paper-{slug}/
+~/Library/Mobile Documents/com~apple~CloudDocs/同步文档/Obsidian Vault/ReadPaper/read-paper-{slug}/
 ```
 
 该目录内固定放：
@@ -30,7 +30,12 @@ description: 阅读学术论文 PDF、arXiv 链接或本地论文文件，提取
    - Bash 命令默认使用 Conda 环境 `dzt`：`conda run -n dzt ...`。若项目另有环境说明，则按项目环境覆盖。
    - 需要依赖：`pdftotext`、Python `PyMuPDF`。缺依赖时先询问用户再安装。
 
-2. **快速通读文本**
+2. **确认标题并重命名会话**
+   - 从 PDF 首页、arXiv/DOI 页面或文件元数据确认论文标题后，立即将当前 Codex 会话标题改为 `{论文标题或通用缩写} 阅读总结`。
+   - 标题过长时用论文常用缩写或 3-6 个关键词，保留可识别性，例如 `SPECTER 阅读总结`、`MLFMF 阅读总结`、`Attention Is All You Need 阅读总结`。
+   - 如果当前运行环境没有会话标题工具，则跳过改名并在交付说明里提示。
+
+3. **快速通读文本**
    ```bash
    conda run -n dzt pdftotext "/tmp/read-paper-{slug}/paper.pdf" "/tmp/read-paper-{slug}/paper.txt"
    ```
@@ -39,12 +44,12 @@ description: 阅读学术论文 PDF、arXiv 链接或本地论文文件，提取
    - 主动检索例子：`example`、`case study`、`toy`、`qualitative`、`failure case`。
    - 主动检索实验设置：`experiment setup`、`implementation details`、`datasets`、`metrics`、`baselines`、`hyperparameters`、`training details`、`inference`、`prompt`、`compute`、`random seed`、`split`。
 
-3. **视觉精读 PDF**
+4. **视觉精读 PDF**
    - 必须看首页、方法图、pipeline/architecture 图、结果表、示例图、定性结果、核心公式。
    - 必须扫实验设置表和附录设置；dataset split、baseline、metric、hyperparameter、compute、prompt template 经常在附录。
    - 不要只依赖 `pdftotext` 理解图、表、公式。
 
-4. **提取图片资产**
+5. **提取图片资产**
    ```bash
    conda run -n dzt python scripts/extract_pdf_assets.py "/tmp/read-paper-{slug}/paper.pdf" \
      --out "/tmp/read-paper-{slug}/images" \
@@ -58,14 +63,14 @@ description: 阅读学术论文 PDF、arXiv 链接或本地论文文件，提取
    - `markdown_snippets.md`：可复制的图片 Markdown 片段。
    - 插图前打开关键图片复核；`confidence=low` 或明显错裁时改用整页图或重渲染关键页。
 
-5. **写 Markdown 解读**
+6. **写 Markdown 解读**
    - 写作前读取 `references/document_template.md`。
    - 必备内容：论文信息、摘要、主要贡献、图表索引、背景、问题定义、方法、论文关键例子、实验设置、实验结果、局限性、总结与个人评价。
    - 图片放置：method 图放方法；qualitative/example/failure 图放关键例子；result/ablation/comparison 图放实验；不确定的图按 caption 和正文首次引用位置判断。
    - 在最终输出目录中写 Markdown；只复制最终文档需要长期引用的精选图到 `attachments/`，并在正文中使用 `attachments/...` 相对路径。
    - 用户要求全量保留图片时，复制全部 `figures/` 到 `attachments/figures/`，并在图表索引中列出。
 
-6. **交付说明**
+7. **交付说明**
    - 告知最终输出目录和临时处理目录；Markdown 文件和 `attachments/` 都在最终输出目录内。
    - 如有低置信度图片、未插入正文的 Figure、论文未说明的实验设置字段，交付时说明。
 
@@ -76,6 +81,7 @@ description: 阅读学术论文 PDF、arXiv 链接或本地论文文件，提取
 - 完整保留论文自述或归纳的 Contributions。
 - 系统整理原文例子，说明例子支撑的概念、方法或结论。
 - 完整保留 experiment setting：任务、数据集、数据划分、指标、baselines、模型规模、训练/推理配置、超参数、计算资源、随机种子/重复次数、实现与复现细节。
+- 识别论文标题后更新当前会话标题，格式为 `{论文标题或通用缩写} 阅读总结`。
 - 最终 Markdown 的行内公式使用 `$...$`，独立公式使用 `$$...$$`。
 - 术语首次出现给中英文，后文保持一致。
 
