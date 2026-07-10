@@ -1,0 +1,4 @@
+interface:
+  display_name: "Read Repo"
+  short_description: "Learn a repo through code paths and functions"
+  default_prompt: "Use $read-repo to study this repository and generate an HTML learning page focused on its task, quality, key files, and functions."

@@ -49,10 +49,10 @@ Default strategy: **引用 + 重画**.
 图：{diagram description}。结构参考自 {source title}，已重新绘制。
 ```
 
-6. Store generated or redrawn assets under the resolved output directory:
+6. Store generated or redrawn assets under the resolved Knowledge Crystals output directory:
 
 ```text
-{Concept Collections}/attachments/{slug}/
+{Knowledge Crystals}/attachments/{slug}/
 ```
 
 7. In the Markdown note, link images only with relative paths:

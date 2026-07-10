@@ -1,4 +1,7 @@
 .DS_Store
+.env
+.env.*
+*.local.env
 *.log
 __pycache__/
 .pytest_cache/
@@ -14,5 +17,6 @@ build/
 
 # Local/private report archives. Keep generated report bodies and machine-specific
 # inventories out of GitHub.
+local-reports/
 local-reports/hv-analysis/files/
 local-reports/hv-analysis/*.private.md

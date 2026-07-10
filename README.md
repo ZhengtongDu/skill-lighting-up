@@ -11,12 +11,17 @@ Codex config depending on the calling agent.
 
 ```text
 skills/
+  feishu-weekly-report/
+  knowledge-crystallizer/
+  read-paper/
+  read-repo/
   gh-address-comments/
   humanizer/
   hv-analysis/
   pdf/
   sync-config/
   storage-analyzer/
+  vault-sync/
 
 configs/
   unified-agent-config.json
@@ -72,7 +77,7 @@ On another machine or server, clone the repo into `/tmp` and run:
 
 ```sh
 tmpdir=$(mktemp -d /tmp/skill-lighting-up.XXXXXX)
-git clone git@github.com:ZhengtongDu/skill-lighting-up.git "$tmpdir/skill-lighting-up"
+git clone "<repository-url>" "$tmpdir/skill-lighting-up"
 cd "$tmpdir/skill-lighting-up"
 ./scripts/sync_config.sh --agent codex
 ```
@@ -105,6 +110,32 @@ Do not commit:
 - generated per-agent config outputs
 - chat history, cache, logs, or project state
 - plugin cache directories or vendor-imported system skills
+
+## For People And AI Agents
+
+The repository contains portable instructions, not one person's machine state.
+Before running a skill, a person or model should read its `SKILL.md`, take
+output locations from the request or documented environment variables, and ask
+when no safe destination is available. Do not infer another user's home
+directory, vault location, account name, organization, token, or private URL.
+
+For `read-paper`, configure either `READ_PAPER_DIR` or `OBSIDIAN_VAULT_DIR` if
+the generic `~/Documents/ReadPaper` default is unsuitable. The workspace helper
+prints the exact resolved paths as JSON so models can proceed without embedding
+machine-specific paths in prompts or documents.
+
+For `read-repo`, set `READ_REPO_OUTPUT_DIR` when the default output location is
+unsuitable. For `feishu-weekly-report`, copy
+`skills/feishu-weekly-report/references/config.example.env` to an ignored local
+environment file and provide only the settings needed for the current action.
+
+## Deliberately External Skills
+
+Codex-provided capabilities such as Chronicle, and externally managed bundles
+such as Cavecrew/Caveman, are not copied here. They depend on platform services,
+hooks, or companion agents that are not portable as standalone `SKILL.md`
+directories. Install or update them through their upstream provider; do not add
+partial copies to this repository.
 
 ## Update From This Machine
 

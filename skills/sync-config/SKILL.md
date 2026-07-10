@@ -1,8 +1,8 @@
 ---
 name: sync-config
 description: |
-  Synchronize this user's Claude Code and Codex global permission/config files
-  and personal skills from git@github.com:ZhengtongDu/skill-lighting-up.git.
+  Synchronize Claude Code and Codex global permission/config files and personal
+  skills from a configured skill-lighting-up repository.
   Use when the user asks to sync, install, update, or standardize Claude Code
   or Codex configuration/skills on a new local machine or server.
 ---
@@ -32,13 +32,15 @@ paths, chat history, project trust state, or machine-local secrets.
 
 ## Procedure
 
-Clone into `/tmp` and run the sync script for the calling agent.
+Clone the repository URL supplied by the user (or the current checkout's
+`origin` URL) into `/tmp`, then run the sync script for the calling agent. If
+no repository URL is available, ask rather than guessing an account or fork.
 
 When this skill is running inside Codex, use:
 
 ```sh
 tmpdir=$(mktemp -d /tmp/skill-lighting-up.XXXXXX)
-git clone git@github.com:ZhengtongDu/skill-lighting-up.git "$tmpdir/skill-lighting-up"
+git clone "<repository-url>" "$tmpdir/skill-lighting-up"
 cd "$tmpdir/skill-lighting-up"
 ./scripts/sync_config.sh --agent codex
 ```
@@ -47,7 +49,7 @@ When this skill is running inside Claude Code, use:
 
 ```sh
 tmpdir=$(mktemp -d /tmp/skill-lighting-up.XXXXXX)
-git clone git@github.com:ZhengtongDu/skill-lighting-up.git "$tmpdir/skill-lighting-up"
+git clone "<repository-url>" "$tmpdir/skill-lighting-up"
 cd "$tmpdir/skill-lighting-up"
 ./scripts/sync_config.sh --agent claude
 ```

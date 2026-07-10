@@ -1,0 +1,7 @@
+interface:
+  display_name: "Feishu Weekly Report"
+  short_description: "Draft, upload, and commit weekly reports"
+  default_prompt: "Use $feishu-weekly-report to prepare this week's Feishu weekly report."
+
+policy:
+  allow_implicit_invocation: true

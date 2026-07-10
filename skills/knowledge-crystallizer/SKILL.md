@@ -7,16 +7,16 @@ description: 将最近几轮关于机器学习、深度学习、检索、优化�
 
 ## Goal
 
-Turn useful ML-related chat into a reviewable Chinese concept note for the user's Obsidian `Concept Collections` directory.
+Turn useful ML-related chat into a reviewable Chinese concept note for the user's configured Obsidian Knowledge Crystals output directory.
 
 Resolve the output directory at runtime in this order:
 
 1. An explicit path in the current user request.
 2. A local-only config file at `${CODEX_HOME:-$HOME/.codex}/knowledge-crystallizer-output-dir`.
-3. An environment/config value such as `CONCEPT_COLLECTIONS_DIR`.
+3. An environment/config value such as `KNOWLEDGE_CRYSTALS_DIR` or `CONCEPT_COLLECTIONS_DIR`.
 4. Existing project conventions.
 
-If no destination can be inferred, ask the user for the target Obsidian `Concept Collections` path before writing files.
+If no destination can be inferred, ask the user for the target Obsidian Knowledge Crystals path before writing files.
 
 Default reader profile: strong in linear algebra, mathematical analysis, and algorithms; weaker in practical CS/ML engineering. Write mainly in Chinese, give first-use English terms, and keep the final result technically dense.
 
@@ -89,25 +89,25 @@ Write the final Markdown note using the accepted plan.
    - invoke `$humanizer` if available, asking it to preserve formulas, code, citations, and technical density;
    - if `$humanizer` is unavailable, do a final anti-AI pass manually;
    - remove generic motivational conclusions, empty signposting, over-bolded list headers, and padded prose.
-7. Write the final file under the resolved Obsidian `Concept Collections` directory:
+7. Write the final file directly under the resolved Obsidian Knowledge Crystals output directory:
 
 ```text
-{Concept Collections}/{概念中文名} ({English Name}).md
+{Knowledge Crystals}/{概念中文名} ({English Name}).md
 ```
 
 8. Handle images with stable relative paths:
    - derive a filesystem-safe `{slug}` from the concept title;
-   - create `{Concept Collections}/attachments/{slug}/` before saving any image;
+   - create `{Knowledge Crystals}/attachments/{slug}/` before saving any image;
    - place self-made or redrawn images in that directory;
    - use only relative Markdown links in the note, never absolute local paths.
 
 ```text
-{Concept Collections}/attachments/{slug}/
+{Knowledge Crystals}/attachments/{slug}/
 ```
 
 Use relative paths such as `attachments/{slug}/figure-name.png`.
 
-After writing, verify every Markdown image link points to an existing file under `{Concept Collections}`. Fix broken links before delivery.
+After writing, verify every Markdown image link points to an existing file under `{Knowledge Crystals}`. Fix broken links before delivery.
 
 ## Output quality checklist
 
